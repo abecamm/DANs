@@ -320,7 +320,10 @@
             <th>Toolbox Lookup</th>
             <th class="token-cell">Unit Token (E)</th>
             <th class="token-cell">GMB Token (F)</th>
-            <th>Adj Amount</th>
+            <th>Toolbox $ (G)</th>
+            <th>Submitted $ (H)</th>
+            <th>Actual $ (I)</th>
+            <th>Adj Amount (J)</th>
             <th class="reason-cell">Reason</th>
             <th>Check #</th>
             <th>Type</th>
@@ -340,7 +343,7 @@
 <script>
 // ── Bookmarklet code ──
 // This runs on the Toolbox page to grab GMB token and Unit Token
-const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')){u=t;break;}}}var result=g+'\\t'+u;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;';d.innerHTML='✅ Tokens copied! Go back to DAN Extractor and click Paste Tokens.';document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
+const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var amt='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')&&!t.startsWith('FP_')){u=t;break;}}}var am=b.match(/USD\\s*\\$([\\d,]+\\.?\\d*)/);if(am)amt=am[1].replace(/,/g,'');var result=g+'\\t'+u+'\\t'+amt;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;max-width:400px;line-height:1.5;';d.innerHTML='✅ Copied!<br>GMB: '+g+'<br>Unit: '+u+'<br>Amount: $'+amt;document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
 
 document.getElementById('bookmarkletLink').href = BOOKMARKLET_CODE;
 
@@ -437,7 +440,8 @@ function parseDAN(text, fileName) {
     customerSeqNum:'', customerSeqNumRaw:'',
     adjustmentAmount:'', reason:'', checkNumber:'',
     adjustmentType:'', warnings:[], status:'ok',
-    unitToken:'', gmbToken:''
+    unitToken:'', gmbToken:'',
+    toolboxAmount:'', submittedAmount:'', actualAmount:''
   };
 
   const noticeDateMatch = text.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}/);
@@ -480,6 +484,25 @@ function parseDAN(text, fileName) {
   const checkMatch = text.match(/check\s*#\s*(\d+)/i) || text.match(/check\s+number\s*(\d+)/i);
   result.checkNumber = checkMatch ? checkMatch[1] : '';
 
+  // Parse amounts for Amount Mismatch DANs
+  // Pattern 1: "written amount of $1,200.38, but the numerical amount was listed as $1,238.00"
+  const mismatch1 = reasonSection.match(/written\s+amount\s+of\s+\$([\d,]+\.?\d*).*?numerical\s+amount\s+was\s+(?:listed\s+as\s+)?\$([\d,]+\.?\d*)/i);
+  // Pattern 2: "item for $1,955.00 was entered as $1,995.00"
+  const mismatch2 = reasonSection.match(/item\s+for\s+\$([\d,]+\.?\d*)\s+was\s+entered\s+as\s+\$([\d,]+\.?\d*)/i);
+
+  if (mismatch1) {
+    // written = actual, numerical = submitted
+    result.actualAmount = mismatch1[1].replace(/,/g, '');
+    result.submittedAmount = mismatch1[2].replace(/,/g, '');
+    result.toolboxAmount = result.submittedAmount;
+  } else if (mismatch2) {
+    // "item for X was entered as Y" — X is actual, Y is what was submitted/entered
+    result.actualAmount = mismatch2[1].replace(/,/g, '');
+    result.submittedAmount = mismatch2[2].replace(/,/g, '');
+    result.toolboxAmount = result.submittedAmount;
+  }
+  // For non-mismatch DANs, amounts will be filled from Toolbox via bookmarklet
+
   if (result.reason === 'REVIEW MANUALLY') result.status = 'review';
   else if (result.warnings.length > 0) result.status = 'warning';
   else result.status = 'ok';
@@ -504,7 +527,7 @@ async function processFiles(files) {
       extractedRows.push(parseDAN(text, files[i].name));
       successCount++;
     } catch(e) {
-      extractedRows.push({ fileName: files[i].name, noticeDate:'', depositDate:'', referenceNumber:'', customerSeqNum:'', customerSeqNumRaw:'', adjustmentAmount:'', reason:'', checkNumber:'', adjustmentType:'', warnings:['Failed to parse: '+e.message], status:'error', unitToken:'', gmbToken:'' });
+      extractedRows.push({ fileName: files[i].name, noticeDate:'', depositDate:'', referenceNumber:'', customerSeqNum:'', customerSeqNumRaw:'', adjustmentAmount:'', reason:'', checkNumber:'', adjustmentType:'', warnings:['Failed to parse: '+e.message], status:'error', unitToken:'', gmbToken:'', toolboxAmount:'', submittedAmount:'', actualAmount:'' });
     }
     progressBar.style.width = Math.round(((i+1)/files.length)*100)+'%';
     await new Promise(r => setTimeout(r, 10));
@@ -539,6 +562,9 @@ function renderTable() {
     else statusHtml = '<span class="badge badge-info"><i class="fa-solid fa-magnifying-glass" style="font-size:10px"></i> Need Tokens</span>';
 
     const amountDisplay = row.adjustmentAmount ? '$'+Number(row.adjustmentAmount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+    const toolboxDisplay = row.toolboxAmount ? '$'+Number(row.toolboxAmount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:var(--text-muted)">—</span>';
+    const submittedDisplay = row.submittedAmount ? '$'+Number(row.submittedAmount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:var(--text-muted)">—</span>';
+    const actualDisplay = row.actualAmount ? '$'+Number(row.actualAmount).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:var(--text-muted)">—</span>';
     const seqDisplay = row.customerSeqNum || '<span class="no-seq">N/A</span>';
     const hasSeq = !!row.customerSeqNum;
 
@@ -570,6 +596,9 @@ function renderTable() {
       <td>${lookupHtml}</td>
       <td class="token-cell">${unitHtml}</td>
       <td class="token-cell">${gmbHtml}</td>
+      <td class="cell-amount">${toolboxDisplay}</td>
+      <td class="cell-amount">${submittedDisplay}</td>
+      <td class="cell-amount">${actualDisplay}</td>
       <td class="cell-amount ${amountClass}">${amountDisplay}</td>
       <td class="reason-cell ${row.reason==='REVIEW MANUALLY'?'reason-review':''}" title="${escapeHtml(row.reason)}">${escapeHtml(row.reason)}</td>
       <td>${escapeHtml(row.checkNumber)||'<span style="color:var(--text-muted)">—</span>'}</td>
@@ -626,14 +655,15 @@ async function pasteTokens(idx, btn) {
     const clipText = await navigator.clipboard.readText();
     if (!clipText) { showToast('Clipboard is empty. Run the bookmarklet on Toolbox first.', 'warning'); return; }
 
-    // Expected format: GMB_token\tUnitToken
+    // Expected format: GMB_token\tUnitToken\tAmount
     const parts = clipText.split('\t');
-    let gmb = '', unit = '';
+    let gmb = '', unit = '', amt = '';
 
     if (parts.length >= 2) {
       // Tab-separated from bookmarklet
       gmb = parts[0].trim();
       unit = parts[1].trim();
+      if (parts.length >= 3) amt = parts[2].trim();
     } else {
       // Maybe just one token pasted — try to detect
       const text = clipText.trim();
@@ -652,17 +682,28 @@ async function pasteTokens(idx, btn) {
       document.getElementById('unit-'+idx).value = unit;
       document.getElementById('unit-'+idx).classList.add('filled');
     }
+    if (amt) {
+      // Set Toolbox amount
+      extractedRows[idx].toolboxAmount = amt;
+      // For non-mismatch DANs, submitted and actual are the same as toolbox amount
+      if (!extractedRows[idx].submittedAmount) {
+        extractedRows[idx].submittedAmount = amt;
+      }
+      if (!extractedRows[idx].actualAmount) {
+        extractedRows[idx].actualAmount = amt;
+      }
+    }
 
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
     btn.classList.add('pasted');
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-paste"></i>'; btn.classList.remove('pasted'); }, 2000);
 
+    // Re-render to show updated amounts
+    renderTable();
     renderStats();
-    // Update status badge and row class
-    updateRowVisual(idx);
 
     const filled = gmb && unit;
-    showToast(filled ? `✅ Tokens set for row ${idx+1}` : `Partial tokens set for row ${idx+1}. ${!gmb?'Missing GMB.':''} ${!unit?'Missing Unit.':''}`, filled ? 'success' : 'warning');
+    showToast(filled ? `✅ Tokens & amount set for row ${idx+1}` : `Partial data set for row ${idx+1}. ${!gmb?'Missing GMB.':''} ${!unit?'Missing Unit.':''}`, filled ? 'success' : 'warning');
 
   } catch(e) {
     showToast('Cannot read clipboard. Make sure you allowed clipboard access, or manually paste into the fields.', 'error');
@@ -691,13 +732,13 @@ function updateRowVisual(idx) {
   else if (row.unitToken && row.gmbToken) tr.classList.add('row-complete');
   else if (row.warnings.length > 0) tr.classList.add('row-warning');
 
-  // Update status cell
-  const statusCell = tr.children[13];
+  // Update status cell (index 16 after adding 3 amount columns)
+  const statusCell = tr.children[16];
   if (row.unitToken && row.gmbToken) {
     statusCell.innerHTML = '<span class="badge badge-ok"><i class="fa-solid fa-circle-check" style="font-size:10px"></i> Ready</span>';
   }
 
-  // Update lookup button
+  // Update lookup button (index 6)
   const lookupCell = tr.children[6];
   const lookupBtn = lookupCell.querySelector('.lookup-btn');
   if (lookupBtn && row.unitToken && row.gmbToken) lookupBtn.classList.add('done');
@@ -706,12 +747,12 @@ function updateRowVisual(idx) {
 // ── Build TSV Row ──
 function buildTSVRow(row) {
   // Columns: A:Notice Date, B:Deposit Date, C:Reference#, D:CustSeq#,
-  // E:Unit Token, F:GMB Token, G:empty, H:empty, I:empty,
+  // E:Unit Token, F:GMB Token, G:Toolbox $, H:Submitted $, I:Actual $,
   // J:Adj Amount, K:Reason, L:Check#, M:empty, N:Adj Type
   return [
     row.noticeDate, row.depositDate, row.referenceNumber, row.customerSeqNum,
     row.unitToken, row.gmbToken,
-    '', '', '',
+    row.toolboxAmount, row.submittedAmount, row.actualAmount,
     row.adjustmentAmount, row.reason, row.checkNumber, '', row.adjustmentType
   ].join('\t');
 }

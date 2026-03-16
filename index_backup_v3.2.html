@@ -159,10 +159,6 @@
   .lookup-btn.done { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
   .lookup-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  .adjust-btn { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); color: #a855f7; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-  .adjust-btn:hover { background: rgba(168,85,247,0.2); border-color: #a855f7; }
-  .adjust-btn.done { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-  .adjust-btn:disabled { opacity: 0.3; cursor: not-allowed; }
   .copy-row-btn { background: none; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; }
   .copy-row-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
   .copy-row-btn.copied { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
@@ -292,36 +288,16 @@
   <div class="bookmarklet-section" id="bookmarkletSection">
     <h3><i class="fa-solid fa-bookmark" style="color:var(--info)"></i> Toolbox Token Grabber — Setup</h3>
     <p>Drag this button to your bookmarks bar. Use it on the Toolbox check deposit page to instantly grab the GMB Token and Unit Token.</p>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-      <div>
-        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;">① Toolbox — grabs tokens + amount</div>
-        <a class="bookmarklet-link" id="bookmarkletLink" href="#">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Grab DAN Tokens
-        </a>
-      </div>
-      <div>
-        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;">② Regulator — fills adjustment form</div>
-        <a class="bookmarklet-link" id="regulatorBookmarkletLink" href="#" style="border-color:#a855f7;color:#a855f7;">
-          <i class="fa-solid fa-gavel"></i> Fill DAN Adjustment
-        </a>
-      </div>
-    </div>
+    <a class="bookmarklet-link" id="bookmarkletLink" href="#">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> Grab DAN Tokens
+    </a>
     <div class="bookmarklet-steps">
-      <h4 style="font-size:12px;margin-top:12px;margin-bottom:6px;color:var(--text-primary);">Toolbox Flow (tokens + amount):</h4>
       <ol>
-        <li><strong>Drag "Grab DAN Tokens"</strong> to your bookmarks bar</li>
-        <li>In the DAN Extractor, click <strong>"Look Up"</strong> on a row → Toolbox opens</li>
-        <li><strong>Paste</strong> sequence number → click <strong>"Get Check"</strong></li>
-        <li>Click the <strong>"Grab DAN Tokens"</strong> bookmarklet → enter check #</li>
-        <li>Back in DAN Extractor, click <strong>"Paste Tokens"</strong></li>
-      </ol>
-      <h4 style="font-size:12px;margin-top:12px;margin-bottom:6px;color:var(--text-primary);">Regulator Flow (adjustment):</h4>
-      <ol>
-        <li><strong>Drag "Fill DAN Adjustment"</strong> to your bookmarks bar</li>
-        <li>In the DAN Extractor, click <strong>"Adjust"</strong> on a row → Regulator opens</li>
-        <li>Click <strong>Actions</strong> → select the correct adjustment size (shown in the toast)</li>
-        <li>Once the form opens, click the <strong>"Fill DAN Adjustment"</strong> bookmarklet</li>
-        <li>Review the pre-filled form and click <strong>Submit</strong></li>
+        <li><strong>Drag</strong> the button above to your Chrome bookmarks bar</li>
+        <li>In the DAN Extractor, click <strong>"Look Up"</strong> on a row — this copies the sequence number and opens Toolbox</li>
+        <li>In Toolbox, <strong>paste</strong> the sequence number in the Receipt Number field and click <strong>"Get Check"</strong></li>
+        <li>Once results load, click the <strong>"Grab DAN Tokens"</strong> bookmarklet in your bookmarks bar</li>
+        <li>Come back to the DAN Extractor and click <strong>"Paste Tokens"</strong> on that row — done!</li>
       </ol>
     </div>
   </div>
@@ -352,7 +328,6 @@
             <th>Check #</th>
             <th>Type</th>
             <th>Status</th>
-            <th>Regulator</th>
             <th></th>
           </tr>
         </thead>
@@ -371,11 +346,6 @@
 const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var amt='';var agent='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')&&!t.startsWith('FP_')){u=t;break;}}}var am=b.match(/USD\\s*\\$([\\d,]+\\.?\\d*)/);if(am)amt=am[1].replace(/,/g,'');var agm=b.match(/Approving\\s+Agent\\s+([^\\n]+)/i);if(agm)agent=agm[1].trim();var chk=prompt('Enter check # from image (or leave blank):','');if(chk===null)chk='';chk=chk.trim();var result=g+'\\t'+u+'\\t'+amt+'\\t'+chk+'\\t'+agent;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;max-width:400px;line-height:1.5;';d.innerHTML='✅ Copied!'+(chk?'<br>Check #: '+chk:'')+'<br>GMB: '+g+'<br>Unit: '+u+'<br>Amount: $'+amt+(agent?'<br>Agent: '+agent:'');document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
 
 document.getElementById('bookmarkletLink').href = BOOKMARKLET_CODE;
-
-// Regulator bookmarklet: reads adjustment JSON from clipboard, fills the form
-const REGULATOR_BOOKMARKLET = `javascript:void(function(){try{navigator.clipboard.readText().then(function(clip){try{var d=JSON.parse(clip);var amt=d.amount;var typ=d.type;var cat=d.category;var reason=d.reason;var inputs=document.querySelectorAll('input');for(var i=0;i<inputs.length;i++){var p=inputs[i].placeholder||'';var l=inputs[i].getAttribute('aria-label')||'';if(p.indexOf('0.00')>-1||l.toLowerCase().indexOf('amount')>-1||inputs[i].name&&inputs[i].name.toLowerCase().indexOf('amount')>-1){inputs[i].focus();var nativeSet=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;nativeSet.call(inputs[i],amt);inputs[i].dispatchEvent(new Event('input',{bubbles:true}));inputs[i].dispatchEvent(new Event('change',{bubbles:true}));break;}}var textareas=document.querySelectorAll('textarea');for(var i=0;i<textareas.length;i++){var p=textareas[i].placeholder||'';if(p.toLowerCase().indexOf('reason')>-1||textareas[i].name&&textareas[i].name.toLowerCase().indexOf('reason')>-1){textareas[i].focus();var nativeSet2=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;nativeSet2.call(textareas[i],reason);textareas[i].dispatchEvent(new Event('input',{bubbles:true}));textareas[i].dispatchEvent(new Event('change',{bubbles:true}));break;}}var msg='✅ Form filled!\\n\\nAmount: $'+amt+'\\nType: '+typ+'\\nCategory: '+cat+'\\nReason: '+reason+'\\n\\n⚠️ Please manually select:\\n• Credit Or Debit: '+typ+'\\n• Type: '+cat+'\\n\\nThen review and click Submit.';var toast=document.createElement('div');toast.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:420px;line-height:1.6;white-space:pre-line;transition:opacity 0.3s;';toast.textContent=msg;document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove();},300);},6000);}catch(e2){alert('Could not parse adjustment data. Click Adjust in the DAN Extractor first.\\n\\n'+e2.message);}}).catch(function(){alert('Cannot read clipboard. Make sure you clicked Adjust in the DAN Extractor first.');});}catch(e){alert('Error: '+e.message);}})();`;
-
-document.getElementById('regulatorBookmarkletLink').href = REGULATOR_BOOKMARKLET;
 
 let extractedRows = [];
 let pdfjsReady = false;
@@ -635,7 +605,6 @@ function renderTable() {
       <td>${escapeHtml(row.checkNumber)||'<span style="color:var(--text-muted)">—</span>'}</td>
       <td>${typeBadge}</td>
       <td title="${escapeHtml(row.warnings.join(', '))}">${statusHtml}</td>
-      <td>${row.unitToken ? `<button class="adjust-btn" onclick="openAdjustment(${idx}, this)"><i class="fa-solid fa-gavel"></i> Adjust</button>` : '<span style="color:var(--text-muted);font-size:10px">Need token</span>'}</td>
       <td><button class="copy-row-btn" onclick="copySingleRow(${idx},this)"><i class="fa-solid fa-copy"></i></button></td>`;
     tbody.appendChild(tr);
   });
@@ -679,55 +648,6 @@ function lookupToolbox(idx) {
 
   // Open Toolbox
   window.open('https://toolbox.sqprod.co/check-deposit/repository', '_blank');
-}
-
-// ── Regulator Adjustment ──
-function getAdjustmentSize(amount, type) {
-  const amt = parseFloat(amount) || 0;
-  if (type === 'Debit') {
-    if (amt <= 5000) return 'Small';
-    if (amt <= 25000) return 'Large';
-    return 'Humongous';
-  } else {
-    // Credit
-    if (amt <= 1000) return 'Small';
-    if (amt <= 5000) return 'Large';
-    return 'Humongous';
-  }
-}
-
-function openAdjustment(idx, btn) {
-  const row = extractedRows[idx];
-  if (!row.unitToken) { showToast('No Unit Token for this row.', 'error'); return; }
-  if (!row.adjustmentAmount) { showToast('No adjustment amount for this row.', 'error'); return; }
-
-  const size = getAdjustmentSize(row.adjustmentAmount, row.adjustmentType);
-  const description = `Deposit Adjustment Notice ${row.adjustmentType} - ${row.reason}`;
-
-  // Build adjustment data object and store it for the bookmarklet to read
-  const adjData = {
-    amount: row.adjustmentAmount,
-    type: row.adjustmentType,       // "Debit" or "Credit"
-    category: 'Square Card Claims',
-    reason: description,
-    size: size
-  };
-
-  // Copy adjustment data as JSON to clipboard for the bookmarklet
-  const adjJson = JSON.stringify(adjData);
-  navigator.clipboard.writeText(adjJson).then(() => {
-    showToast(`Adjustment data copied (${size}: $${Number(row.adjustmentAmount).toLocaleString('en-US',{minimumFractionDigits:2})}, ${row.adjustmentType}) — Open the ${size} adjustment form, then click the Regulator bookmarklet`, 'info');
-  }).catch(() => {
-    fallbackCopy(adjJson);
-    showToast(`Adjustment data copied — click the Regulator bookmarklet after opening the form`, 'info');
-  });
-
-  // Open Regulator to the adjustments section
-  window.open(`https://regulator.sqprod.co/n/users/${row.unitToken}?section=adjustments`, '_blank');
-
-  btn.innerHTML = '<i class="fa-solid fa-check"></i> Opened';
-  btn.classList.add('done');
-  setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-gavel"></i> Adjust'; btn.classList.remove('done'); }, 3000);
 }
 
 // ── Paste Tokens ──

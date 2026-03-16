@@ -343,7 +343,7 @@
 <script>
 // ── Bookmarklet code ──
 // This runs on the Toolbox page to grab GMB token and Unit Token
-const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var amt='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')&&!t.startsWith('FP_')){u=t;break;}}}var am=b.match(/USD\\s*\\$([\\d,]+\\.?\\d*)/);if(am)amt=am[1].replace(/,/g,'');var chk=prompt('Enter check # from image (or leave blank):','');if(chk===null)chk='';chk=chk.trim();var result=g+'\\t'+u+'\\t'+amt+'\\t'+chk;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;max-width:400px;line-height:1.5;';d.innerHTML='✅ Copied!'+(chk?'<br>Check #: '+chk:'')+'<br>GMB: '+g+'<br>Unit: '+u+'<br>Amount: $'+amt;document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
+const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var amt='';var agent='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')&&!t.startsWith('FP_')){u=t;break;}}}var am=b.match(/USD\\s*\\$([\\d,]+\\.?\\d*)/);if(am)amt=am[1].replace(/,/g,'');var agm=b.match(/Approving\\s+Agent\\s+([^\\n]+)/i);if(agm)agent=agm[1].trim();var chk=prompt('Enter check # from image (or leave blank):','');if(chk===null)chk='';chk=chk.trim();var result=g+'\\t'+u+'\\t'+amt+'\\t'+chk+'\\t'+agent;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;max-width:400px;line-height:1.5;';d.innerHTML='✅ Copied!'+(chk?'<br>Check #: '+chk:'')+'<br>GMB: '+g+'<br>Unit: '+u+'<br>Amount: $'+amt+(agent?'<br>Agent: '+agent:'');document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
 
 document.getElementById('bookmarkletLink').href = BOOKMARKLET_CODE;
 
@@ -441,7 +441,8 @@ function parseDAN(text, fileName) {
     adjustmentAmount:'', reason:'', checkNumber:'',
     adjustmentType:'', warnings:[], status:'ok',
     unitToken:'', gmbToken:'',
-    toolboxAmount:'', submittedAmount:'', actualAmount:''
+    toolboxAmount:'', submittedAmount:'', actualAmount:'',
+    agentError:''
   };
 
   const noticeDateMatch = text.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}/);
@@ -527,7 +528,7 @@ async function processFiles(files) {
       extractedRows.push(parseDAN(text, files[i].name));
       successCount++;
     } catch(e) {
-      extractedRows.push({ fileName: files[i].name, noticeDate:'', depositDate:'', referenceNumber:'', customerSeqNum:'', customerSeqNumRaw:'', adjustmentAmount:'', reason:'', checkNumber:'', adjustmentType:'', warnings:['Failed to parse: '+e.message], status:'error', unitToken:'', gmbToken:'', toolboxAmount:'', submittedAmount:'', actualAmount:'' });
+      extractedRows.push({ fileName: files[i].name, noticeDate:'', depositDate:'', referenceNumber:'', customerSeqNum:'', customerSeqNumRaw:'', adjustmentAmount:'', reason:'', checkNumber:'', adjustmentType:'', warnings:['Failed to parse: '+e.message], status:'error', unitToken:'', gmbToken:'', toolboxAmount:'', submittedAmount:'', actualAmount:'', agentError:'' });
     }
     progressBar.style.width = Math.round(((i+1)/files.length)*100)+'%';
     await new Promise(r => setTimeout(r, 10));
@@ -655,9 +656,9 @@ async function pasteTokens(idx, btn) {
     const clipText = await navigator.clipboard.readText();
     if (!clipText) { showToast('Clipboard is empty. Run the bookmarklet on Toolbox first.', 'warning'); return; }
 
-    // Expected format: GMB_token\tUnitToken\tAmount\tCheckNumber
+    // Expected format: GMB_token\tUnitToken\tAmount\tCheckNumber\tAgent
     const parts = clipText.split('\t');
-    let gmb = '', unit = '', amt = '', chk = '';
+    let gmb = '', unit = '', amt = '', chk = '', agent = '';
 
     if (parts.length >= 2) {
       // Tab-separated from bookmarklet
@@ -665,6 +666,7 @@ async function pasteTokens(idx, btn) {
       unit = parts[1].trim();
       if (parts.length >= 3) amt = parts[2].trim();
       if (parts.length >= 4) chk = parts[3].trim();
+      if (parts.length >= 5) agent = parts[4].trim();
     } else {
       // Maybe just one token pasted — try to detect
       const text = clipText.trim();
@@ -697,6 +699,9 @@ async function pasteTokens(idx, btn) {
 
     if (chk) {
       extractedRows[idx].checkNumber = chk;
+    }
+    if (agent) {
+      extractedRows[idx].agentError = agent;
     }
 
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -753,12 +758,12 @@ function updateRowVisual(idx) {
 function buildTSVRow(row) {
   // Columns: A:Notice Date, B:Deposit Date, C:Reference#, D:CustSeq#,
   // E:Unit Token, F:GMB Token, G:Toolbox $, H:Submitted $, I:Actual $,
-  // J:Adj Amount, K:Reason, L:Check#, M:empty, N:Adj Type
+  // J:Adj Amount, K:Reason, L:Check#, M:Agent Error, N:Adj Type
   return [
     row.noticeDate, row.depositDate, row.referenceNumber, row.customerSeqNum,
     row.unitToken, row.gmbToken,
     row.toolboxAmount, row.submittedAmount, row.actualAmount,
-    row.adjustmentAmount, row.reason, row.checkNumber, '', row.adjustmentType
+    row.adjustmentAmount, row.reason, row.checkNumber, row.agentError, row.adjustmentType
   ].join('\t');
 }
 

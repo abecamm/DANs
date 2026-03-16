@@ -343,7 +343,7 @@
 <script>
 // ── Bookmarklet code ──
 // This runs on the Toolbox page to grab GMB token and Unit Token
-const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var amt='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')&&!t.startsWith('FP_')){u=t;break;}}}var am=b.match(/USD\\s*\\$([\\d,]+\\.?\\d*)/);if(am)amt=am[1].replace(/,/g,'');var result=g+'\\t'+u+'\\t'+amt;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;max-width:400px;line-height:1.5;';d.innerHTML='✅ Copied!<br>GMB: '+g+'<br>Unit: '+u+'<br>Amount: $'+amt;document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
+const BOOKMARKLET_CODE = `javascript:void(function(){try{var b=document.body.innerText;var g='';var u='';var amt='';var gm=b.match(/GMB_[a-zA-Z0-9_]+/);if(gm)g=gm[0];var links=document.querySelectorAll('a[href*="regulator"]');if(links.length>0){var href=links[0].href;var um=href.match(/\\/users\\/([A-Z0-9]+)/)||href.match(/\\/n\\/users\\/([A-Z0-9]+)/);if(um)u=um[1];else u=links[0].textContent.trim();}if(!u){var allLinks=document.querySelectorAll('a');for(var i=0;i<allLinks.length;i++){var t=allLinks[i].textContent.trim();if(t.match(/^[A-Z0-9]{10,}$/)&&!t.startsWith('GMB')&&!t.startsWith('FP_')){u=t;break;}}}var am=b.match(/USD\\s*\\$([\\d,]+\\.?\\d*)/);if(am)amt=am[1].replace(/,/g,'');var chk=prompt('Enter check # from image (or leave blank):','');if(chk===null)chk='';chk=chk.trim();var result=g+'\\t'+u+'\\t'+amt+'\\t'+chk;navigator.clipboard.writeText(result).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#0d3117;color:#00d632;border:1px solid rgba(0,214,50,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transition:opacity 0.3s;max-width:400px;line-height:1.5;';d.innerHTML='✅ Copied!'+(chk?'<br>Check #: '+chk:'')+'<br>GMB: '+g+'<br>Unit: '+u+'<br>Amount: $'+amt;document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},3000);}).catch(function(){prompt('Copy these tokens (Ctrl+C):',result);});}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#3d1117;color:#ff4757;border:1px solid rgba(255,71,87,0.3);padding:14px 24px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);';d.textContent='Error: '+e.message;document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}})();`;
 
 document.getElementById('bookmarkletLink').href = BOOKMARKLET_CODE;
 
@@ -655,15 +655,16 @@ async function pasteTokens(idx, btn) {
     const clipText = await navigator.clipboard.readText();
     if (!clipText) { showToast('Clipboard is empty. Run the bookmarklet on Toolbox first.', 'warning'); return; }
 
-    // Expected format: GMB_token\tUnitToken\tAmount
+    // Expected format: GMB_token\tUnitToken\tAmount\tCheckNumber
     const parts = clipText.split('\t');
-    let gmb = '', unit = '', amt = '';
+    let gmb = '', unit = '', amt = '', chk = '';
 
     if (parts.length >= 2) {
       // Tab-separated from bookmarklet
       gmb = parts[0].trim();
       unit = parts[1].trim();
       if (parts.length >= 3) amt = parts[2].trim();
+      if (parts.length >= 4) chk = parts[3].trim();
     } else {
       // Maybe just one token pasted — try to detect
       const text = clipText.trim();
@@ -694,16 +695,20 @@ async function pasteTokens(idx, btn) {
       }
     }
 
+    if (chk) {
+      extractedRows[idx].checkNumber = chk;
+    }
+
     btn.innerHTML = '<i class="fa-solid fa-check"></i>';
     btn.classList.add('pasted');
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-paste"></i>'; btn.classList.remove('pasted'); }, 2000);
 
-    // Re-render to show updated amounts
+    // Re-render to show updated amounts and check number
     renderTable();
     renderStats();
 
     const filled = gmb && unit;
-    showToast(filled ? `✅ Tokens & amount set for row ${idx+1}` : `Partial data set for row ${idx+1}. ${!gmb?'Missing GMB.':''} ${!unit?'Missing Unit.':''}`, filled ? 'success' : 'warning');
+    showToast(filled ? `✅ Tokens set for row ${idx+1}${chk?' (Check #'+chk+')':''}` : `Partial data set for row ${idx+1}. ${!gmb?'Missing GMB.':''} ${!unit?'Missing Unit.':''}`, filled ? 'success' : 'warning');
 
   } catch(e) {
     showToast('Cannot read clipboard. Make sure you allowed clipboard access, or manually paste into the fields.', 'error');

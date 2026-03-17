@@ -39,7 +39,7 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
-  .app-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  .app-container { max-width: 95vw; margin: 0 auto; padding: 24px; }
 
   /* Header */
   .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
@@ -99,15 +99,15 @@
   .table-scroll { overflow-x: auto; max-height: 600px; overflow-y: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   thead { position: sticky; top: 0; z-index: 10; }
-  thead th { background: var(--bg-tertiary); padding: 10px 12px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+  thead th { background: var(--bg-tertiary); padding: 10px 10px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
   tbody tr { border-bottom: 1px solid var(--border-color); transition: background 0.1s; }
   tbody tr:hover { background: var(--bg-hover); }
   tbody tr:last-child { border-bottom: none; }
-  tbody td { padding: 9px 12px; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+  tbody td { padding: 9px 10px; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
   .row-warning { background: var(--warning-bg) !important; }
   .row-error { background: var(--error-bg) !important; }
   .row-complete { background: rgba(46, 125, 50, 0.03) !important; }
-  .cell-filename { max-width: 160px; font-weight: 500; color: var(--text-primary); }
+  .cell-filename { max-width: 120px; font-weight: 500; color: var(--text-primary); }
   .cell-amount { font-variant-numeric: tabular-nums; font-weight: 600; }
   .cell-debit { color: var(--error); }
   .cell-credit { color: #2e7d32; }
@@ -242,7 +242,7 @@
   .loading-text { font-size: 14px; color: var(--text-secondary); }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 14px; color: var(--text-secondary); }
-  .reason-cell { max-width: 220px; }
+  .reason-cell { max-width: 260px; }
   .reason-review { color: var(--warning); font-weight: 600; }
 </style>
 </head>

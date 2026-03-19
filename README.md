@@ -86,13 +86,20 @@ Two bookmarklets that work together to auto-fill the Regulator adjustment form:
 | Large | $5,000 | $25,000 |
 | Humongous | $50,000 | $250,000 |
 
-### 5. Email Generation (Google Apps Script)
-Rebuilt Google Apps Script bound to the DAN tracking sheet:
+### 5. Email Generation (Bookmarklet + Google Apps Script)
+
+**Generate DAN Email Bookmarklet** (on Google Sheets):
+- Copy a row → click bookmarklet → paste into prompt
+- First use: prompts for your name (remembered for the session)
+- Auto-selects **Debit** or **Credit** template based on column N
+- Generates the full seller communication email
+- Copies to clipboard automatically — paste directly into Salesforce
+
+**Google Apps Script** (alternative, bound to the DAN sheet):
 - **DAN Tools → Generate Email** menu in the spreadsheet
-- Reads the selected row and generates the appropriate **Debit** or **Credit** email template
+- Reads the selected row and generates the appropriate email template
 - Creates a Google Doc with the formatted email
 - One-click copy for pasting into Salesforce
-- Stores agent name for reuse across sessions
 
 ---
 
@@ -171,7 +178,15 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 18. Review the auto-filled fields → click **Submit**
 19. Back in the sheet, mark column P as **Yes**
 
-### Email Generation
+### Email Generation (Bookmarklet)
+20. In the Google Sheet, select the row → **Cmd+C**
+21. Click the **"Generate DAN Email"** bookmarklet
+22. First time: enter your name when prompted (remembered for the session)
+23. **Cmd+V** to paste the row into the prompt → OK
+24. Email is generated and **copied to your clipboard** automatically
+25. Go to Salesforce → **Cmd+V** to paste
+
+### Email Generation (Apps Script Alternative)
 20. In the Google Sheet, click on the row you need to email about
 21. Go to **DAN Tools → Generate Email**
 22. Copy the generated email from the popup → paste into Salesforce
@@ -185,10 +200,11 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 2. Drag **"Grab DAN Tokens"** to your Chrome bookmarks bar
 3. Use it on any Toolbox check deposit page
 
-### Adjustment Tool Bookmarklets
+### Adjustment & Email Bookmarklets
 1. Open the [Adjustment Tool](https://abecamm.github.io/DANs/adjust.html)
 2. Drag **"Prep DAN Adjustment"** to your bookmarks bar — use on Google Sheets
 3. Drag **"Fill DAN Adjustment"** to your bookmarks bar — use on Regulator
+4. Drag **"Generate DAN Email"** to your bookmarks bar — use on Google Sheets
 
 > **Note:** If bookmarklets are updated on the site, delete the old bookmark and re-drag the new one.
 
@@ -236,7 +252,11 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 - Auto-determines adjustment tier (Small/Large/Humongous) from amount + debit/credit
 - Auto-fills all 4 Regulator form fields (Amount, Credit/Debit, Type, Reason)
 - React/MUI-compatible form filling using nativeInputValueSetter + click simulation
+- **NEW: Generate DAN Email bookmarklet** — auto-generates Debit/Credit seller comms from row data
+- Copies email to clipboard for direct paste into Salesforce
+- Remembers agent name for the session
 - Added "Adjustment Tool" link in DAN Extractor header
+- Cleaned up repo: removed backup files and legacy email_bookmarklet.js
 
 ### v3.3 — March 17, 2025
 - Redesigned UI with Claude/Anthropic-inspired light theme (warm cream, terracotta accents)
@@ -273,3 +293,4 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 - [x] Google Apps Script email generation (Debit + Credit)
 - [x] Claude-inspired light theme redesign
 - [x] Regulator adjustment automation (Prep + Fill bookmarklets)
+- [x] Email generation bookmarklet (prompt-based, clipboard copy)

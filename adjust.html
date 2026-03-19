@@ -93,12 +93,6 @@
 
   /* Code block */
   code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; }
-
-  /* Toast */
-  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: var(--radius); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.1); max-width: 400px; }
-  .toast.visible { transform: translateY(0); opacity: 1; }
-  .toast-success { background: #fff; color: var(--success); border: 1px solid #c8e6c9; }
-  .toast-error { background: #fff; color: var(--error); border: 1px solid #f5c6c6; }
 </style>
 </head>
 <body>
@@ -131,7 +125,7 @@
       <div class="step">Select the row in the DAN Google Sheet that needs adjustment</div>
       <div class="step">Copy the row — <strong>Cmd+C</strong> (make sure you select the full row A through P)</div>
       <div class="step">Click the <strong>"Prep DAN Adjustment"</strong> bookmarklet</div>
-      <div class="step">Regulator opens to the unit's page in a new tab. The adjustment data is on your clipboard as JSON.</div>
+      <div class="step">A toast shows the parsed data + tier. Regulator opens to the unit's page in a new tab.</div>
     </div>
 
     <div class="info-box">
@@ -198,208 +192,20 @@
 
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
 // ============================================================
 // BOOKMARKLET 1: Prep DAN Adjustment (for Google Sheets)
 // ============================================================
-// Reads clipboard (tab-separated row), parses columns, determines tier,
-// copies JSON payload to clipboard, opens Regulator to unit page.
-const PREP_CODE = `javascript:void(function(){
-  navigator.clipboard.readText().then(function(txt){
-    if(!txt||!txt.includes('\\t')){
-      alert('No row data found on clipboard.\\nSelect the full row (A-P) in the DAN sheet and Cmd+C first.');
-      return;
-    }
-    var cols=txt.split('\\t');
-    if(cols.length<16){
-      alert('Expected 16 columns (A-P), got '+cols.length+'.\\nMake sure you copied the full row.');
-      return;
-    }
-    var unitToken=cols[4].trim();
-    var adjAmount=cols[9].trim().replace(/[\\$,]/g,'');
-    var reason=cols[10].trim();
-    var adjType=cols[13].trim();
-    if(!unitToken){alert('Unit Token (column E) is empty.');return;}
-    if(!adjAmount){alert('Adjusted Amount (column J) is empty.');return;}
-    if(!adjType){alert('Adjustment Type (column N) is empty.');return;}
-    var amt=parseFloat(adjAmount);
-    var tier='';
-    var isCredit=adjType.toLowerCase()==='credit';
-    if(isCredit){
-      if(amt<=1000)tier='Small';
-      else if(amt<=5000)tier='Large';
-      else tier='Humongous';
-    }else{
-      if(amt<=5000)tier='Small';
-      else if(amt<=25000)tier='Large';
-      else tier='Humongous';
-    }
-    var reasonText='Deposit Adjustment Notice '+adjType+' - '+reason;
-    var payload=JSON.stringify({
-      unitToken:unitToken,
-      amount:adjAmount,
-      creditOrDebit:adjType.toUpperCase(),
-      type:'SQUARE_CARD_CLAIMS',
-      reason:reasonText,
-      tier:tier
-    });
-    navigator.clipboard.writeText(payload).then(function(){
-      var d=document.createElement('div');
-      d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:420px;line-height:1.7;transition:opacity 0.3s;';
-      d.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:6px;\">✓ Adjustment Prepped</div>'
-        +'<div><strong>Unit:</strong> '+unitToken+'</div>'
-        +'<div><strong>Amount:</strong> $'+parseFloat(adjAmount).toLocaleString('en-US',{minimumFractionDigits:2})+'</div>'
-        +'<div><strong>Type:</strong> '+adjType+'</div>'
-        +'<div><strong>Tier:</strong> <span style=\"padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;'
-        +(tier==='Small'?'background:rgba(46,125,50,0.08);color:#2e7d32;'
-          :tier==='Large'?'background:rgba(212,135,14,0.08);color:#d4870e;'
-          :'background:rgba(193,53,53,0.06);color:#c13535;')
-        +'\">'+tier+'</span></div>'
-        +'<div><strong>Reason:</strong> '+reasonText+'</div>'
-        +'<div style=\"margin-top:8px;font-size:12px;color:#6b6560;\">Opening Regulator...</div>';
-      document.body.appendChild(d);
-      setTimeout(function(){
-        window.open('https://regulator.sqprod.co/n/users/'+unitToken,'_blank');
-      },500);
-      setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},5000);
-    });
-  }).catch(function(e){
-    alert('Cannot read clipboard: '+e.message+'\\n\\nMake sure you allowed clipboard access.');
-  });
-})();`;
+// Minified single-line bookmarklet. Reads clipboard, parses row,
+// determines tier, writes JSON to clipboard, opens Regulator.
+document.getElementById('prep-bookmarklet').href = "javascript:void(function(){try{navigator.clipboard.readText().then(function(t){if(!t||t.indexOf(String.fromCharCode(9))<0){alert('No row data on clipboard. Select the full row (A-P) and Cmd+C first.');return;}var c=t.split(String.fromCharCode(9));if(c.length<14){alert('Expected at least 14 columns (A-N), got '+c.length+'. Copy the full row.');return;}var u=c[4].trim(),a=c[9].trim().replace(/[$,]/g,''),r=c[10].trim(),ty=c[13].trim();if(!u){alert('Unit Token (col E) is empty.');return;}if(!a){alert('Adjusted Amount (col J) is empty.');return;}if(!ty){alert('Adjustment Type (col N) is empty.');return;}var n=parseFloat(a),tier='',ic=ty.toLowerCase()==='credit';if(ic){tier=n<=1000?'Small':n<=5000?'Large':'Humongous';}else{tier=n<=5000?'Small':n<=25000?'Large':'Humongous';}var reason='Deposit Adjustment Notice '+ty+' - '+r;var p=JSON.stringify({unitToken:u,amount:a,creditOrDebit:ty.toUpperCase(),type:'SQUARE_CARD_CLAIMS',reason:reason,tier:tier});navigator.clipboard.writeText(p).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:420px;line-height:1.7;transition:opacity 0.3s;';var tb=tier==='Small'?'background:rgba(46,125,50,0.08);color:#2e7d32;':tier==='Large'?'background:rgba(212,135,14,0.08);color:#d4870e;':'background:rgba(193,53,53,0.06);color:#c13535;';d.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:6px;\">Adjustment Prepped</div><div><b>Unit:</b> '+u+'</div><div><b>Amount:</b> $'+n.toLocaleString(\"en-US\",{minimumFractionDigits:2})+'</div><div><b>Type:</b> '+ty+'</div><div><b>Tier:</b> <span style=\"padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;'+tb+'\">'+tier+'</span></div><div><b>Reason:</b> '+reason+'</div><div style=\"margin-top:8px;font-size:12px;color:#6b6560;\">Opening Regulator...</div>';document.body.appendChild(d);setTimeout(function(){window.open('https://regulator.sqprod.co/n/users/'+u,'_blank');},600);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},6000);});}).catch(function(e){alert('Clipboard error: '+e.message+'\\n\\nTry: select the row, Cmd+C, then click this bookmarklet again.');});}catch(e){alert('Error: '+e.message);}})();";
 
 // ============================================================
 // BOOKMARKLET 2: Fill DAN Adjustment (for Regulator)
 // ============================================================
-// Reads JSON from clipboard, fills MUI form fields in the adjustment modal.
-const FILL_CODE = `javascript:void(function(){
-  navigator.clipboard.readText().then(function(txt){
-    try{
-      var d=JSON.parse(txt);
-    }catch(e){
-      alert('No adjustment data found on clipboard.\\nRun the Prep bookmarklet on the Google Sheet first.');
-      return;
-    }
-    if(!d.amount||!d.creditOrDebit||!d.reason){
-      alert('Invalid adjustment data on clipboard.\\nRun the Prep bookmarklet on the Google Sheet first.');
-      return;
-    }
-    function setMuiInput(input,value){
-      var nativeSetter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-      nativeSetter.call(input,value);
-      input.dispatchEvent(new Event('input',{bubbles:true}));
-      input.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    function setMuiTextarea(ta,value){
-      var nativeSetter=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;
-      nativeSetter.call(ta,value);
-      ta.dispatchEvent(new Event('input',{bubbles:true}));
-      ta.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    function clickMuiOption(selectEl,optionText){
-      return new Promise(function(resolve){
-        selectEl.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));
-        setTimeout(function(){
-          var options=document.querySelectorAll('li[role=\"option\"]');
-          for(var i=0;i<options.length;i++){
-            if(options[i].textContent.trim()===optionText){
-              options[i].click();
-              resolve(true);
-              return;
-            }
-          }
-          resolve(false);
-        },300);
-      });
-    }
-    var toast=document.createElement('div');
-    toast.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:380px;line-height:1.7;transition:opacity 0.3s;';
-    toast.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:4px;\">⏳ Filling adjustment...</div>';
-    document.body.appendChild(toast);
-    setTimeout(function(){
-      var amountInput=document.querySelector('input.currency-input,input[inputmode=\"numeric\"]');
-      if(amountInput){
-        setMuiInput(amountInput,d.amount);
-        toast.innerHTML+='<div>✓ Amount: $'+parseFloat(d.amount).toLocaleString('en-US',{minimumFractionDigits:2})+'</div>';
-      }else{
-        toast.innerHTML+='<div style=\"color:#c13535;\">✗ Amount field not found</div>';
-      }
-      setTimeout(function(){
-        var selects=document.querySelectorAll('[role=\"button\"].MuiSelect-select,div.MuiSelect-select');
-        if(selects.length<1){
-          selects=document.querySelectorAll('.MuiSelect-select');
-        }
-        var creditDebitSelect=selects[0];
-        if(creditDebitSelect){
-          clickMuiOption(creditDebitSelect,d.creditOrDebit).then(function(ok){
-            toast.innerHTML+='<div>'+(ok?'✓':'✗')+' Credit/Debit: '+d.creditOrDebit+'</div>';
-            setTimeout(function(){
-              var typeSelect=selects[1];
-              if(typeSelect){
-                clickMuiOption(typeSelect,d.type).then(function(ok2){
-                  toast.innerHTML+='<div>'+(ok2?'✓':'✗')+' Type: '+d.type+'</div>';
-                  setTimeout(function(){
-                    var textareas=document.querySelectorAll('textarea');
-                    var reasonInput=null;
-                    for(var i=0;i<textareas.length;i++){
-                      if(!textareas[i].closest('[style*=\"display: none\"]')&&!textareas[i].closest('[hidden]')){
-                        reasonInput=textareas[i];break;
-                      }
-                    }
-                    if(!reasonInput){
-                      var inputs=document.querySelectorAll('input[type=\"text\"]');
-                      for(var i=0;i<inputs.length;i++){
-                        var lbl=inputs[i].closest('.MuiFormControl-root');
-                        if(lbl&&lbl.textContent.toLowerCase().includes('reason')){
-                          reasonInput=inputs[i];break;
-                        }
-                      }
-                    }
-                    if(reasonInput){
-                      if(reasonInput.tagName==='TEXTAREA'){
-                        setMuiTextarea(reasonInput,d.reason);
-                      }else{
-                        setMuiInput(reasonInput,d.reason);
-                      }
-                      toast.innerHTML+='<div>✓ Reason filled</div>';
-                    }else{
-                      toast.innerHTML+='<div style=\"color:#c13535;\">✗ Reason field not found</div>';
-                    }
-                    toast.innerHTML+='<div style=\"margin-top:8px;font-weight:600;color:#2e7d32;\">Ready — review and Submit</div>';
-                    setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove();},300);},6000);
-                  },400);
-                });
-              }else{
-                toast.innerHTML+='<div style=\"color:#c13535;\">✗ Type dropdown not found</div>';
-              }
-            },500);
-          });
-        }else{
-          toast.innerHTML+='<div style=\"color:#c13535;\">✗ Credit/Debit dropdown not found</div>';
-        }
-      },400);
-    },200);
-  }).catch(function(e){
-    alert('Cannot read clipboard: '+e.message+'\\n\\nMake sure you allowed clipboard access.');
-  });
-})();`;
-
-// Set bookmarklet hrefs
-document.getElementById('prep-bookmarklet').href = PREP_CODE;
-document.getElementById('fill-bookmarklet').href = FILL_CODE;
-
-// Toast helper
-function showToast(message, type = 'success') {
-  const toast = document.getElementById('toast');
-  const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark' };
-  toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<i class="fa-solid ${icons[type]||icons.success}"></i> ${message}`;
-  void toast.offsetWidth;
-  toast.classList.add('visible');
-  setTimeout(() => toast.classList.remove('visible'), 4000);
-}
+// Minified single-line bookmarklet. Reads JSON from clipboard,
+// fills MUI form fields using nativeInputValueSetter and click simulation.
+document.getElementById('fill-bookmarklet').href = "javascript:void(function(){try{navigator.clipboard.readText().then(function(t){try{var d=JSON.parse(t);}catch(e){alert('No adjustment data on clipboard. Run Prep bookmarklet on the Google Sheet first.');return;}if(!d.amount||!d.creditOrDebit||!d.reason){alert('Invalid data. Run Prep bookmarklet first.');return;}function si(inp,v){var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(inp,v);inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}function st(ta,v){var s=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;s.call(ta,v);ta.dispatchEvent(new Event('input',{bubbles:true}));ta.dispatchEvent(new Event('change',{bubbles:true}));}function co(sel,txt){return new Promise(function(res){sel.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));setTimeout(function(){var opts=document.querySelectorAll('li[role=\"option\"]');for(var i=0;i<opts.length;i++){if(opts[i].textContent.trim()===txt){opts[i].click();res(true);return;}}res(false);},400);});}var toast=document.createElement('div');toast.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:380px;line-height:1.7;transition:opacity 0.3s;';toast.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:4px;\">Filling adjustment...</div>';document.body.appendChild(toast);setTimeout(function(){var ai=document.querySelector('input.currency-input,input[inputmode=\"numeric\"]');if(ai){si(ai,d.amount);toast.innerHTML+='<div>✓ Amount: $'+parseFloat(d.amount).toLocaleString(\"en-US\",{minimumFractionDigits:2})+'</div>';}else{toast.innerHTML+='<div style=\"color:#c13535;\">✗ Amount field not found</div>';}setTimeout(function(){var sels=document.querySelectorAll('.MuiSelect-select');var s0=sels[0];if(s0){co(s0,d.creditOrDebit).then(function(ok){toast.innerHTML+='<div>'+(ok?'✓':'✗')+' Credit/Debit: '+d.creditOrDebit+'</div>';setTimeout(function(){var s1=sels[1];if(s1){co(s1,d.type).then(function(ok2){toast.innerHTML+='<div>'+(ok2?'✓':'✗')+' Type: '+d.type+'</div>';setTimeout(function(){var ta=document.querySelectorAll('textarea');var ri=null;for(var i=0;i<ta.length;i++){var p=ta[i].closest('.MuiFormControl-root');if(p){ri=ta[i];break;}}if(!ri){var ins=document.querySelectorAll('input[type=\"text\"]');for(var i=0;i<ins.length;i++){var fc=ins[i].closest('.MuiFormControl-root');if(fc&&fc.textContent.toLowerCase().indexOf('reason')>=0){ri=ins[i];break;}}}if(ri){if(ri.tagName==='TEXTAREA'){st(ri,d.reason);}else{si(ri,d.reason);}toast.innerHTML+='<div>✓ Reason filled</div>';}else{toast.innerHTML+='<div style=\"color:#c13535;\">✗ Reason field not found</div>';}toast.innerHTML+='<div style=\"margin-top:8px;font-weight:600;color:#2e7d32;\">Ready — review and Submit</div>';setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove();},300);},6000);},500);});}else{toast.innerHTML+='<div style=\"color:#c13535;\">✗ Type dropdown not found</div>';}},600);});} else{toast.innerHTML+='<div style=\"color:#c13535;\">✗ Credit/Debit dropdown not found</div>';}},500);},300);}).catch(function(e){alert('Clipboard error: '+e.message);});}catch(e){alert('Error: '+e.message);}})();";
 </script>
 </body>
 </html>

@@ -162,6 +162,61 @@
     </div>
   </div>
 
+  <!-- BOOKMARKLET 3: Generate Email -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-envelope" style="color:var(--accent)"></i> Step 3 — Generate Email</div>
+    <div class="card-desc">
+      Use this bookmarklet on the <strong>Google Sheet</strong> after the adjustment is submitted.
+      Copy the row, click the bookmarklet, paste into the prompt — it generates the Debit or Credit seller communication ready to paste into Salesforce.
+    </div>
+    <a class="bookmarklet-link" id="email-bookmarklet" href="#">
+      <i class="fa-solid fa-envelope"></i> Generate DAN Email
+    </a>
+
+    <div class="divider"></div>
+
+    <div class="steps">
+      <div class="step">After submitting the adjustment, go back to the Google Sheet</div>
+      <div class="step">Select the row and <strong>Cmd+C</strong> to copy</div>
+      <div class="step">Click the <strong>"Generate DAN Email"</strong> bookmarklet — a prompt asks for your name (first time only)</div>
+      <div class="step">A second prompt appears — <strong>Cmd+V</strong> to paste the row, then click OK</div>
+      <div class="step">The generated email appears in an alert — <strong>copy it</strong> and paste into Salesforce</div>
+    </div>
+
+    <div class="info-box">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>Your name is remembered for the session. The email template auto-selects Debit or Credit based on column N. Lindsey and Jennifer can use this too — just drag the bookmarklet to their bookmarks bar.</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card-title" style="font-size:13px; margin-top:4px;"><i class="fa-solid fa-file-lines" style="color:var(--text-muted)"></i> Email Templates</div>
+
+    <details style="margin-top:12px;">
+      <summary style="cursor:pointer; font-size:13px; font-weight:500; color:var(--accent);">Preview Debit Template</summary>
+      <div style="background:var(--bg-tertiary); border-radius:var(--radius); padding:14px; margin-top:8px; font-size:12px; line-height:1.7; color:var(--text-secondary); white-space:pre-wrap;">My name is {Agent} with Square. I am reaching out to you today regarding a check you deposited into your account.
+
+Thank you for using our mobile check deposit feature. On {Notice Date} we received a notice about an issue with a recent mobile check deposit of {Check #} for {Submitted $} submitted to your account on {Deposit Date}. Upon researching this issue, we have determined an overage of funds was paid to you due to {Reason}. As a result we have deducted {Adjusted $} from your account.
+
+If you have any additional questions please don't hesitate to reach out. We do apologize for the inconvenience.
+
+Square Account Services</div>
+    </details>
+
+    <details style="margin-top:8px;">
+      <summary style="cursor:pointer; font-size:13px; font-weight:500; color:var(--accent);">Preview Credit Template</summary>
+      <div style="background:var(--bg-tertiary); border-radius:var(--radius); padding:14px; margin-top:8px; font-size:12px; line-height:1.7; color:var(--text-secondary); white-space:pre-wrap;">My name is {Agent} with Square. I am reaching out to you today regarding a check you deposited into your account.
+
+Thank you for using our mobile check deposit feature. It was found that check number {Check #} deposited on {Deposit Date} for {Submitted $} was processed for the incorrect amount. As a result, we have credited your account {Adjusted $}.
+
+We are extremely sorry about the delay in receiving your funds and we do apologize for the inconvenience.
+
+If you have any additional questions please don't hesitate to reach out. We are here to help!
+
+Square Account Services</div>
+    </details>
+  </div>
+
   <!-- Tier Reference -->
   <div class="card">
     <div class="card-title"><i class="fa-solid fa-layer-group" style="color:var(--accent)"></i> Adjustment Tier Reference</div>
@@ -207,6 +262,12 @@ document.getElementById('prep-bookmarklet').href = "javascript:void(function(){t
 // Minified single-line bookmarklet. Reads JSON from clipboard,
 // fills MUI form fields using nativeInputValueSetter and click simulation.
 document.getElementById('fill-bookmarklet').href = "javascript:void(function(){try{navigator.clipboard.readText().then(function(t){try{var d=JSON.parse(t);}catch(e){alert('No adjustment data on clipboard. Run Prep bookmarklet on the Google Sheet first.');return;}if(!d.amount||!d.creditOrDebit||!d.reason){alert('Invalid data. Run Prep bookmarklet first.');return;}function si(inp,v){var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(inp,v);inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}function st(ta,v){var s=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;s.call(ta,v);ta.dispatchEvent(new Event('input',{bubbles:true}));ta.dispatchEvent(new Event('change',{bubbles:true}));}function findModal(){var dialogs=document.querySelectorAll('[role=\"dialog\"],[role=\"presentation\"]');for(var i=0;i<dialogs.length;i++){if(dialogs[i].textContent.indexOf('Create Adjustment')>=0)return dialogs[i];}return document.body;}function findFC(modal,lbl){var fcs=modal.querySelectorAll('.MuiFormControl-root');for(var i=0;i<fcs.length;i++){var la=fcs[i].querySelector('label');if(la&&la.textContent.toLowerCase().indexOf(lbl.toLowerCase())>=0)return fcs[i];}for(var i=0;i<fcs.length;i++){if(fcs[i].textContent.toLowerCase().indexOf(lbl.toLowerCase())>=0)return fcs[i];}return null;}function clickOpt(sel,txt){return new Promise(function(res){sel.focus();sel.click();setTimeout(function(){sel.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true,view:window}));setTimeout(function(){var opts=document.querySelectorAll('li[role=\"option\"]');for(var j=0;j<opts.length;j++){if(opts[j].textContent.trim()===txt){opts[j].click();return res(true);}}document.body.click();res(false);},600);},200);});}var modal=findModal();var log=[];function addLog(msg){log.push(msg);}function showToast(){var toast=document.createElement('div');toast.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:400px;line-height:1.7;transition:opacity 0.3s;';toast.innerHTML=log.join('');document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove();},300);},8000);}addLog('<div style=\"font-weight:700;color:#c96442;margin-bottom:4px;\">Filling adjustment...</div>');var ai=modal.querySelector('input.currency-input,input[inputmode=\"numeric\"]');if(ai){si(ai,d.amount);addLog('<div>\\u2713 Amount: $'+parseFloat(d.amount).toFixed(2)+'</div>');}else{addLog('<div style=\"color:#c13535;\">\\u2717 Amount not found</div>');}setTimeout(function(){var cdFC=findFC(modal,'credit or debit');if(!cdFC)cdFC=findFC(modal,'credit');var cdSel=cdFC?cdFC.querySelector('[role=\"button\"],.MuiSelect-select,div[tabindex]'):null;if(cdSel){clickOpt(cdSel,d.creditOrDebit).then(function(ok){addLog('<div>'+(ok?'\\u2713':'\\u2717')+' Credit/Debit: '+d.creditOrDebit+'</div>');setTimeout(function(){var tyFC=findFC(modal,'type');var tySel=tyFC?tyFC.querySelector('[role=\"button\"],.MuiSelect-select,div[tabindex]'):null;if(tySel){clickOpt(tySel,d.type).then(function(ok2){addLog('<div>'+(ok2?'\\u2713':'\\u2717')+' Type: '+d.type+'</div>');setTimeout(function(){var rFC=findFC(modal,'reason');var ri=rFC?(rFC.querySelector('textarea')||rFC.querySelector('input')):null;if(!ri){var tas=modal.querySelectorAll('textarea');if(tas.length)ri=tas[tas.length-1];}if(ri){if(ri.tagName==='TEXTAREA')st(ri,d.reason);else si(ri,d.reason);addLog('<div>\\u2713 Reason filled</div>');}else{addLog('<div style=\"color:#c13535;\">\\u2717 Reason not found</div>');}addLog('<div style=\"margin-top:8px;font-weight:600;color:#2e7d32;\">Ready \\u2014 review and Submit</div>');showToast();},700);});}else{addLog('<div style=\"color:#c13535;\">\\u2717 Type dropdown not found</div>');showToast();}},900);});}else{addLog('<div style=\"color:#c13535;\">\\u2717 Credit/Debit not found</div>');showToast();}},500);}).catch(function(e){alert('Clipboard error: '+e.message);});}catch(e){alert('Error: '+e.message);}})();";
+
+// ============================================================
+// BOOKMARKLET 3: Generate DAN Email (for Google Sheets)
+// ============================================================
+// Reads row via prompt, generates Debit or Credit email, copies to clipboard.
+document.getElementById('email-bookmarklet').href = "javascript:void(function(){try{var name=sessionStorage.getItem('danAgentName');if(!name){name=prompt('Enter your name (for the email signature):','');if(!name)return;sessionStorage.setItem('danAgentName',name);}var t=prompt('Paste the copied row here (Cmd+V):');if(!t)return;var TAB=String.fromCharCode(9);if(t.indexOf(TAB)<0){alert('No tab-separated data detected. Copy the full row (A-P) first.');return;}var c=t.split(TAB);if(c.length<14){alert('Expected at least 14 columns, got '+c.length+'.');return;}var noticeDate=c[0].trim(),depositDate=c[1].trim(),subAmt=c[7].trim(),adjAmt=c[9].trim(),reason=c[10].trim(),checkNum=c[11].trim(),adjType=c[13].trim();function fmt(v){if(!v)return'$0.00';v=v.replace(/[^0-9.,]/g,'');var n=parseFloat(v.replace(/,/g,''));if(isNaN(n))return'$'+v;return'$'+n.toFixed(2);}var sub=fmt(subAmt),adj=fmt(adjAmt);var isDebit=adjType.toLowerCase().indexOf('debit')>=0;var NL=String.fromCharCode(10);var msg='';if(isDebit){msg='My name is '+name+' with Square. I am reaching out to you today regarding a check you deposited into your account.'+NL+NL+'Thank you for using our mobile check deposit feature. On '+noticeDate+' we received a notice about an issue with a recent mobile check deposit of '+checkNum+' for '+sub+' submitted to your account on '+depositDate+'. Upon researching this issue, we have determined an overage of funds was paid to you due to '+reason+'. As a result we have deducted '+adj+' from your account.'+NL+NL+'If you have any additional questions please don\\'t hesitate to reach out. We do apologize for the inconvenience.'+NL+NL+'Square Account Services';}else{msg='My name is '+name+' with Square. I am reaching out to you today regarding a check you deposited into your account.'+NL+NL+'Thank you for using our mobile check deposit feature. It was found that check number '+checkNum+' deposited on '+depositDate+' for '+sub+' was processed for the incorrect amount. As a result, we have credited your account '+adj+'.'+NL+NL+'We are extremely sorry about the delay in receiving your funds and we do apologize for the inconvenience.'+NL+NL+'If you have any additional questions please don\\'t hesitate to reach out. We are here to help!'+NL+NL+'Square Account Services';}try{navigator.clipboard.writeText(msg);}catch(ce){}alert((isDebit?'DEBIT':'CREDIT')+' Email Generated — Check #'+checkNum+NL+'Amount: '+adj+' | Reason: '+reason+NL+NL+'--- EMAIL COPIED TO CLIPBOARD ---'+NL+NL+msg+NL+NL+'--- Paste into Salesforce (Cmd+V) ---');}catch(e){alert('Error: '+e.message);}})();";
 </script>
 </body>
 </html>

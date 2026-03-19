@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAN Adjustment Tool</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #faf9f7;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f0eeeb;
+    --bg-hover: #e8e6e1;
+    --border-color: #d4d0ca;
+    --border-light: #c4bfb8;
+    --text-primary: #1a1612;
+    --text-secondary: #6b6560;
+    --text-muted: #9b958e;
+    --accent: #c96442;
+    --accent-hover: #b5553a;
+    --accent-dim: rgba(201, 100, 66, 0.08);
+    --warning: #d4870e;
+    --warning-bg: rgba(212, 135, 14, 0.08);
+    --error: #c13535;
+    --error-bg: rgba(193, 53, 53, 0.06);
+    --success: #2e7d32;
+    --success-bg: rgba(46, 125, 50, 0.06);
+    --info: #6b7b8d;
+    --info-bg: rgba(107, 123, 141, 0.08);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app-container { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+  .logo { width: 42px; height: 42px; background: var(--accent); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; font-weight: 700; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .header .subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+  /* Nav */
+  .nav-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--accent); text-decoration: none; margin-bottom: 24px; font-weight: 500; }
+  .nav-link:hover { color: var(--accent-hover); }
+
+  /* Cards */
+  .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+
+  /* Bookmarklet link */
+  .bookmarklet-link { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--accent); color: #fff; border-radius: var(--radius); font-size: 13px; font-weight: 600; text-decoration: none; cursor: grab; transition: all 0.15s ease; }
+  .bookmarklet-link:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(201, 100, 66, 0.3); }
+  .bookmarklet-link:active { cursor: grabbing; }
+
+  /* Steps */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 12px; margin-bottom: 14px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+  .step::before { counter-increment: step; content: counter(step); display: flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; background: var(--accent-dim); color: var(--accent); border-radius: 50%; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step strong { color: var(--text-primary); }
+
+  /* Tier table */
+  .tier-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .tier-table th { text-align: left; padding: 8px 12px; background: var(--bg-tertiary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); }
+  .tier-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
+  .tier-table tr:last-child td { border-bottom: none; }
+
+  /* Badge */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-small { background: rgba(46, 125, 50, 0.08); color: #2e7d32; }
+  .badge-large { background: rgba(212, 135, 14, 0.08); color: #d4870e; }
+  .badge-humongous { background: rgba(193, 53, 53, 0.06); color: #c13535; }
+
+  /* Info box */
+  .info-box { background: var(--info-bg); border: 1px solid rgba(107, 123, 141, 0.15); border-radius: var(--radius); padding: 14px 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; display: flex; gap: 10px; }
+  .info-box i { color: var(--info); margin-top: 2px; flex-shrink: 0; }
+
+  /* Warning box */
+  .warning-box { background: var(--warning-bg); border: 1px solid rgba(212, 135, 14, 0.15); border-radius: var(--radius); padding: 14px 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; display: flex; gap: 10px; margin-top: 16px; }
+  .warning-box i { color: var(--warning); margin-top: 2px; flex-shrink: 0; }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border-color); margin: 20px 0; }
+
+  /* Code block */
+  code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 24px; border-radius: var(--radius); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.1); max-width: 400px; }
+  .toast.visible { transform: translateY(0); opacity: 1; }
+  .toast-success { background: #fff; color: var(--success); border: 1px solid #c8e6c9; }
+  .toast-error { background: #fff; color: var(--error); border: 1px solid #f5c6c6; }
+</style>
+</head>
+<body>
+<div class="app-container">
+
+  <a href="index.html" class="nav-link"><i class="fa-solid fa-arrow-left"></i> Back to DAN Extractor</a>
+
+  <div class="header">
+    <div class="logo"><i class="fa-solid fa-scale-balanced" style="font-size:18px"></i></div>
+    <div>
+      <h1>DAN Adjustment Tool</h1>
+      <div class="subtitle">Streamline Regulator adjustments from your DAN spreadsheet</div>
+    </div>
+  </div>
+
+  <!-- BOOKMARKLET 1: Prep Adjustment -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-table" style="color:var(--accent)"></i> Step 1 — Prep Adjustment</div>
+    <div class="card-desc">
+      Use this bookmarklet on the <strong>Google Sheet</strong>. Select a row, copy it (Cmd+C), then click the bookmarklet.
+      It reads the row data, determines the correct adjustment tier, and opens Regulator to the unit's page.
+    </div>
+    <a class="bookmarklet-link" id="prep-bookmarklet" href="#">
+      <i class="fa-solid fa-clipboard-list"></i> Prep DAN Adjustment
+    </a>
+
+    <div class="divider"></div>
+
+    <div class="steps">
+      <div class="step">Select the row in the DAN Google Sheet that needs adjustment</div>
+      <div class="step">Copy the row — <strong>Cmd+C</strong> (make sure you select the full row A through P)</div>
+      <div class="step">Click the <strong>"Prep DAN Adjustment"</strong> bookmarklet</div>
+      <div class="step">Regulator opens to the unit's page in a new tab. The adjustment data is on your clipboard as JSON.</div>
+    </div>
+
+    <div class="info-box">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>The bookmarklet reads tab-separated values from your clipboard. Make sure you've copied the full row (columns A–P) before clicking.</span>
+    </div>
+  </div>
+
+  <!-- BOOKMARKLET 2: Fill Adjustment -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent)"></i> Step 2 — Auto-Fill Adjustment</div>
+    <div class="card-desc">
+      Use this bookmarklet on <strong>Regulator</strong> after the adjustment modal is open.
+      It reads the data from your clipboard and fills in all form fields automatically.
+    </div>
+    <a class="bookmarklet-link" id="fill-bookmarklet" href="#">
+      <i class="fa-solid fa-bolt"></i> Fill DAN Adjustment
+    </a>
+
+    <div class="divider"></div>
+
+    <div class="steps">
+      <div class="step">On the Regulator page, click <strong>Actions</strong> (bottom left)</div>
+      <div class="step">Select the correct adjustment tier — the Prep bookmarklet toast tells you which one (<span class="badge badge-small">Small</span> <span class="badge badge-large">Large</span> or <span class="badge badge-humongous">Humongous</span>)</div>
+      <div class="step">Once the modal is open, click the <strong>"Fill DAN Adjustment"</strong> bookmarklet</div>
+      <div class="step">Review the auto-filled fields, then click <strong>Submit</strong></div>
+      <div class="step">Go back to the Google Sheet and mark column P as <strong>Yes</strong></div>
+    </div>
+
+    <div class="warning-box">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span><strong>Always review before submitting.</strong> Verify the amount, debit/credit, and reason are correct before clicking Submit. The bookmarklet fills fields but does not submit automatically.</span>
+    </div>
+  </div>
+
+  <!-- Tier Reference -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-layer-group" style="color:var(--accent)"></i> Adjustment Tier Reference</div>
+    <div class="card-desc">The correct tier is auto-determined based on the adjustment amount and debit/credit type.</div>
+    <table class="tier-table">
+      <thead>
+        <tr><th>Tier</th><th>Credit Up To</th><th>Debit Up To</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-small">Small</span></td><td>$1,000</td><td>$5,000</td></tr>
+        <tr><td><span class="badge badge-large">Large</span></td><td>$5,000</td><td>$25,000</td></tr>
+        <tr><td><span class="badge badge-humongous">Humongous</span></td><td>$50,000</td><td>$250,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Reason Mapping -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-tags" style="color:var(--accent)"></i> Reason Format</div>
+    <div class="card-desc">
+      The Reason field is auto-generated as:<br>
+      <code>Deposit Adjustment Notice {Debit/Credit} - {Reason from Column K}</code>
+    </div>
+    <div class="info-box">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>Example: <strong>Deposit Adjustment Notice Debit - Duplicate Presentment</strong></span>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// BOOKMARKLET 1: Prep DAN Adjustment (for Google Sheets)
+// ============================================================
+// Reads clipboard (tab-separated row), parses columns, determines tier,
+// copies JSON payload to clipboard, opens Regulator to unit page.
+const PREP_CODE = `javascript:void(function(){
+  navigator.clipboard.readText().then(function(txt){
+    if(!txt||!txt.includes('\\t')){
+      alert('No row data found on clipboard.\\nSelect the full row (A-P) in the DAN sheet and Cmd+C first.');
+      return;
+    }
+    var cols=txt.split('\\t');
+    if(cols.length<16){
+      alert('Expected 16 columns (A-P), got '+cols.length+'.\\nMake sure you copied the full row.');
+      return;
+    }
+    var unitToken=cols[4].trim();
+    var adjAmount=cols[9].trim().replace(/[\\$,]/g,'');
+    var reason=cols[10].trim();
+    var adjType=cols[13].trim();
+    if(!unitToken){alert('Unit Token (column E) is empty.');return;}
+    if(!adjAmount){alert('Adjusted Amount (column J) is empty.');return;}
+    if(!adjType){alert('Adjustment Type (column N) is empty.');return;}
+    var amt=parseFloat(adjAmount);
+    var tier='';
+    var isCredit=adjType.toLowerCase()==='credit';
+    if(isCredit){
+      if(amt<=1000)tier='Small';
+      else if(amt<=5000)tier='Large';
+      else tier='Humongous';
+    }else{
+      if(amt<=5000)tier='Small';
+      else if(amt<=25000)tier='Large';
+      else tier='Humongous';
+    }
+    var reasonText='Deposit Adjustment Notice '+adjType+' - '+reason;
+    var payload=JSON.stringify({
+      unitToken:unitToken,
+      amount:adjAmount,
+      creditOrDebit:adjType.toUpperCase(),
+      type:'SQUARE_CARD_CLAIMS',
+      reason:reasonText,
+      tier:tier
+    });
+    navigator.clipboard.writeText(payload).then(function(){
+      var d=document.createElement('div');
+      d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:420px;line-height:1.7;transition:opacity 0.3s;';
+      d.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:6px;\">✓ Adjustment Prepped</div>'
+        +'<div><strong>Unit:</strong> '+unitToken+'</div>'
+        +'<div><strong>Amount:</strong> $'+parseFloat(adjAmount).toLocaleString('en-US',{minimumFractionDigits:2})+'</div>'
+        +'<div><strong>Type:</strong> '+adjType+'</div>'
+        +'<div><strong>Tier:</strong> <span style=\"padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;'
+        +(tier==='Small'?'background:rgba(46,125,50,0.08);color:#2e7d32;'
+          :tier==='Large'?'background:rgba(212,135,14,0.08);color:#d4870e;'
+          :'background:rgba(193,53,53,0.06);color:#c13535;')
+        +'\">'+tier+'</span></div>'
+        +'<div><strong>Reason:</strong> '+reasonText+'</div>'
+        +'<div style=\"margin-top:8px;font-size:12px;color:#6b6560;\">Opening Regulator...</div>';
+      document.body.appendChild(d);
+      setTimeout(function(){
+        window.open('https://regulator.sqprod.co/n/users/'+unitToken,'_blank');
+      },500);
+      setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},5000);
+    });
+  }).catch(function(e){
+    alert('Cannot read clipboard: '+e.message+'\\n\\nMake sure you allowed clipboard access.');
+  });
+})();`;
+
+// ============================================================
+// BOOKMARKLET 2: Fill DAN Adjustment (for Regulator)
+// ============================================================
+// Reads JSON from clipboard, fills MUI form fields in the adjustment modal.
+const FILL_CODE = `javascript:void(function(){
+  navigator.clipboard.readText().then(function(txt){
+    try{
+      var d=JSON.parse(txt);
+    }catch(e){
+      alert('No adjustment data found on clipboard.\\nRun the Prep bookmarklet on the Google Sheet first.');
+      return;
+    }
+    if(!d.amount||!d.creditOrDebit||!d.reason){
+      alert('Invalid adjustment data on clipboard.\\nRun the Prep bookmarklet on the Google Sheet first.');
+      return;
+    }
+    function setMuiInput(input,value){
+      var nativeSetter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+      nativeSetter.call(input,value);
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    function setMuiTextarea(ta,value){
+      var nativeSetter=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;
+      nativeSetter.call(ta,value);
+      ta.dispatchEvent(new Event('input',{bubbles:true}));
+      ta.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    function clickMuiOption(selectEl,optionText){
+      return new Promise(function(resolve){
+        selectEl.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));
+        setTimeout(function(){
+          var options=document.querySelectorAll('li[role=\"option\"]');
+          for(var i=0;i<options.length;i++){
+            if(options[i].textContent.trim()===optionText){
+              options[i].click();
+              resolve(true);
+              return;
+            }
+          }
+          resolve(false);
+        },300);
+      });
+    }
+    var toast=document.createElement('div');
+    toast.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:380px;line-height:1.7;transition:opacity 0.3s;';
+    toast.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:4px;\">⏳ Filling adjustment...</div>';
+    document.body.appendChild(toast);
+    setTimeout(function(){
+      var amountInput=document.querySelector('input.currency-input,input[inputmode=\"numeric\"]');
+      if(amountInput){
+        setMuiInput(amountInput,d.amount);
+        toast.innerHTML+='<div>✓ Amount: $'+parseFloat(d.amount).toLocaleString('en-US',{minimumFractionDigits:2})+'</div>';
+      }else{
+        toast.innerHTML+='<div style=\"color:#c13535;\">✗ Amount field not found</div>';
+      }
+      setTimeout(function(){
+        var selects=document.querySelectorAll('[role=\"button\"].MuiSelect-select,div.MuiSelect-select');
+        if(selects.length<1){
+          selects=document.querySelectorAll('.MuiSelect-select');
+        }
+        var creditDebitSelect=selects[0];
+        if(creditDebitSelect){
+          clickMuiOption(creditDebitSelect,d.creditOrDebit).then(function(ok){
+            toast.innerHTML+='<div>'+(ok?'✓':'✗')+' Credit/Debit: '+d.creditOrDebit+'</div>';
+            setTimeout(function(){
+              var typeSelect=selects[1];
+              if(typeSelect){
+                clickMuiOption(typeSelect,d.type).then(function(ok2){
+                  toast.innerHTML+='<div>'+(ok2?'✓':'✗')+' Type: '+d.type+'</div>';
+                  setTimeout(function(){
+                    var textareas=document.querySelectorAll('textarea');
+                    var reasonInput=null;
+                    for(var i=0;i<textareas.length;i++){
+                      if(!textareas[i].closest('[style*=\"display: none\"]')&&!textareas[i].closest('[hidden]')){
+                        reasonInput=textareas[i];break;
+                      }
+                    }
+                    if(!reasonInput){
+                      var inputs=document.querySelectorAll('input[type=\"text\"]');
+                      for(var i=0;i<inputs.length;i++){
+                        var lbl=inputs[i].closest('.MuiFormControl-root');
+                        if(lbl&&lbl.textContent.toLowerCase().includes('reason')){
+                          reasonInput=inputs[i];break;
+                        }
+                      }
+                    }
+                    if(reasonInput){
+                      if(reasonInput.tagName==='TEXTAREA'){
+                        setMuiTextarea(reasonInput,d.reason);
+                      }else{
+                        setMuiInput(reasonInput,d.reason);
+                      }
+                      toast.innerHTML+='<div>✓ Reason filled</div>';
+                    }else{
+                      toast.innerHTML+='<div style=\"color:#c13535;\">✗ Reason field not found</div>';
+                    }
+                    toast.innerHTML+='<div style=\"margin-top:8px;font-weight:600;color:#2e7d32;\">Ready — review and Submit</div>';
+                    setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove();},300);},6000);
+                  },400);
+                });
+              }else{
+                toast.innerHTML+='<div style=\"color:#c13535;\">✗ Type dropdown not found</div>';
+              }
+            },500);
+          });
+        }else{
+          toast.innerHTML+='<div style=\"color:#c13535;\">✗ Credit/Debit dropdown not found</div>';
+        }
+      },400);
+    },200);
+  }).catch(function(e){
+    alert('Cannot read clipboard: '+e.message+'\\n\\nMake sure you allowed clipboard access.');
+  });
+})();`;
+
+// Set bookmarklet hrefs
+document.getElementById('prep-bookmarklet').href = PREP_CODE;
+document.getElementById('fill-bookmarklet').href = FILL_CODE;
+
+// Toast helper
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark' };
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<i class="fa-solid ${icons[type]||icons.success}"></i> ${message}`;
+  void toast.offsetWidth;
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 4000);
+}
+</script>
+</body>
+</html>

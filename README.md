@@ -1,10 +1,11 @@
-# DAN PDF Extractor
+# DAN PDF Extractor & Adjustment Tool
 
-A browser-based automation tool for processing Wells Fargo Deposit Adjustment Notices (DANs). Replaces a fully manual PDF-to-spreadsheet workflow with drag-and-drop extraction, one-click token lookup, and automated email generation.
+A browser-based automation suite for processing Wells Fargo Deposit Adjustment Notices (DANs). Replaces a fully manual PDF-to-spreadsheet-to-Regulator workflow with drag-and-drop extraction, one-click token lookup, automated Regulator form filling, and email generation.
 
-## 🚀 Live Tool
+## 🚀 Live Tools
 
-**[Open DAN Extractor →](https://abecamm.github.io/DANs/)**
+- **[DAN Extractor →](https://abecamm.github.io/DANs/)** — PDF extraction, token lookup, spreadsheet copy
+- **[Adjustment Tool →](https://abecamm.github.io/DANs/adjust.html)** — Regulator adjustment automation
 
 ---
 
@@ -17,9 +18,12 @@ Processing DANs was a fully manual, repetitive workflow:
 3. Navigate to Toolbox, paste the sequence number, click "Get Check"
 4. Copy GMB Token, Unit Token, amount, and check number **one at a time** into the sheet
 5. Double-check everything for typos
-6. Generate a seller communication email (previously locked behind an inaccessible Google Apps Script)
+6. Copy the Unit Token, search it in Regulator, click the correct adjustment tier
+7. Manually fill in amount, credit/debit, type, and reason in the Regulator form
+8. Go back to the sheet, mark column P as "Yes"
+9. Generate a seller communication email (previously locked behind an inaccessible Google Apps Script)
 
-**~5 minutes per DAN × 10–20 DANs/week = 50–100 minutes of manual data entry per week.**
+**~7–8 minutes per DAN × 10–20 DANs/week = 70–160 minutes of manual work per week.**
 
 ---
 
@@ -54,7 +58,35 @@ All copied as tab-separated values in a single clipboard action.
 - **Copy All Rows** — copies all extracted data as tab-separated values
 - **Paste into Google Sheets** — data flows across columns A→N perfectly
 
-### 4. Email Generation (Google Apps Script)
+### 4. Regulator Adjustment Automation (Bookmarklets)
+Two bookmarklets that work together to auto-fill the Regulator adjustment form:
+
+**Prep DAN Adjustment** (used on Google Sheets):
+- Copy a row from the DAN sheet → click bookmarklet → paste into prompt
+- Parses all 16 columns, determines the correct adjustment tier (Small/Large/Humongous)
+- Shows a summary alert with unit, amount, type, tier, and reason
+- Opens Regulator directly to the unit's page
+- Copies JSON payload to clipboard for the Fill bookmarklet
+
+**Fill DAN Adjustment** (used on Regulator):
+- With the adjustment modal open, click the bookmarklet
+- Auto-fills all four form fields:
+  - **Adjustment Amount** — via React-compatible `nativeInputValueSetter`
+  - **Credit Or Debit** — clicks MUI dropdown, selects correct option
+  - **Type** — clicks dropdown, selects `SQUARE_CARD_CLAIMS`
+  - **Reason** — fills `Deposit Adjustment Notice {Debit/Credit} - {Reason}`
+- Shows a progress toast with ✓/✗ for each field
+- You review and click Submit
+
+**Adjustment Tier Logic:**
+
+| Tier | Credit Up To | Debit Up To |
+|---|---|---|
+| Small | $1,000 | $5,000 |
+| Large | $5,000 | $25,000 |
+| Humongous | $50,000 | $250,000 |
+
+### 5. Email Generation (Google Apps Script)
 Rebuilt Google Apps Script bound to the DAN tracking sheet:
 - **DAN Tools → Generate Email** menu in the spreadsheet
 - Reads the selected row and generates the appropriate **Debit** or **Credit** email template
@@ -66,16 +98,27 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 
 ## Time Savings
 
-| Metric | Before (Manual) | After (DAN Extractor) | Savings |
+| Metric | Before (Manual) | After (Automated) | Savings |
 |---|---|---|---|
-| **Per DAN** | ~5 minutes | ~30 seconds | **~4.5 min (90%)** |
-| **Weekly (10 DANs)** | ~50 minutes | ~5 minutes | **~45 min** |
-| **Weekly (20 DANs)** | ~100 minutes | ~10 minutes | **~90 min** |
-| **Monthly estimate** | ~5.5 hours | ~33 minutes | **~3+ hours** |
+| **Per DAN (full cycle)** | ~7–8 minutes | ~1 minute | **~85–90%** |
+| **Weekly (10 DANs)** | ~70–80 minutes | ~10 minutes | **~60–70 min** |
+| **Weekly (20 DANs)** | ~140–160 minutes | ~20 minutes | **~120–140 min** |
+| **Monthly estimate** | ~9–10 hours | ~1 hour | **~8+ hours** |
+
+### Breakdown Per DAN
+
+| Step | Before | After |
+|---|---|---|
+| Extract PDF data | ~2 min (read + type 8 fields) | ~5 sec (drag & drop) |
+| Look up tokens in Toolbox | ~1.5 min (navigate, copy one by one) | ~15 sec (bookmarklet) |
+| Paste into spreadsheet | ~1 min (manual entry across 14 cols) | ~5 sec (Copy All Rows → Cmd+V) |
+| Regulator adjustment | ~2 min (search, pick tier, fill 4 fields) | ~20 sec (Prep → Fill → Submit) |
+| Generate email | ~1 min (locked script workaround) | ~15 sec (DAN Tools menu) |
 
 ### Additional Benefits
 - **Zero typos** — no manual transcription of reference numbers, tokens, or amounts
 - **Automated reason mapping** — PDF language is mapped to exact spreadsheet dropdown values
+- **Auto tier selection** — correct adjustment tier determined from amount + debit/credit
 - **Team-accessible email generation** — no longer locked behind a single user's script
 - **Error reduction** — Amount Mismatch DANs auto-parse submitted vs actual amounts
 - **Batch processing** — handle all DANs at once instead of one at a time
@@ -118,25 +161,40 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 10. Go to the Google Sheet → click cell A in the first empty row → **Cmd+V**
 11. Data fills across columns A through N automatically
 
+### Regulator Adjustment
+12. In the Google Sheet, select the row that needs adjustment
+13. **Cmd+C** to copy the row
+14. Click the **"Prep DAN Adjustment"** bookmarklet → paste into prompt → OK
+15. Regulator opens to the unit's page
+16. Click **Actions** → select the tier shown in the alert (Small/Large/Humongous)
+17. Once the modal is open, click the **"Fill DAN Adjustment"** bookmarklet
+18. Review the auto-filled fields → click **Submit**
+19. Back in the sheet, mark column P as **Yes**
+
 ### Email Generation
-12. In the Google Sheet, click on the row you need to email about
-13. Go to **DAN Tools → Generate Email**
-14. Copy the generated email from the popup → paste into Salesforce
+20. In the Google Sheet, click on the row you need to email about
+21. Go to **DAN Tools → Generate Email**
+22. Copy the generated email from the popup → paste into Salesforce
 
 ---
 
 ## Bookmarklet Installation
 
+### DAN Extractor Bookmarklets
 1. Open the [DAN Extractor](https://abecamm.github.io/DANs/)
-2. Find the **"Grab DAN Tokens"** button in the setup section
-3. Drag it to your Chrome bookmarks bar
-4. Use it on any Toolbox check deposit page
+2. Drag **"Grab DAN Tokens"** to your Chrome bookmarks bar
+3. Use it on any Toolbox check deposit page
 
-> **Note:** If the bookmarklet is updated on the site, you'll need to delete the old bookmark and re-drag the new one.
+### Adjustment Tool Bookmarklets
+1. Open the [Adjustment Tool](https://abecamm.github.io/DANs/adjust.html)
+2. Drag **"Prep DAN Adjustment"** to your bookmarks bar — use on Google Sheets
+3. Drag **"Fill DAN Adjustment"** to your bookmarks bar — use on Regulator
+
+> **Note:** If bookmarklets are updated on the site, delete the old bookmark and re-drag the new one.
 
 ---
 
-## Google Sheet Columns (A–N)
+## Google Sheet Columns (A–P)
 
 | Column | Field | Source |
 |---|---|---|
@@ -154,6 +212,8 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 | L | Check Number | Bookmarklet prompt / PDF |
 | M | Agent Error | Toolbox Bookmarklet (if manual review) |
 | N | Adjustment Type | PDF (Debit or Credit) |
+| O | DAN Adj/Actions Completed | Link to Regulator |
+| P | Adjusted (Yes/No) | Manual — triggers email workflow |
 
 ---
 
@@ -162,12 +222,21 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 - **Pure HTML/CSS/JavaScript** — no server, no build step
 - **[PDF.js](https://mozilla.github.io/pdf.js/)** — client-side PDF parsing (CDN-hosted)
 - **Google Apps Script** — email generation bound to the tracking sheet
+- **MUI/React form automation** — `nativeInputValueSetter` + programmatic dropdown interaction
 - **GitHub Pages** — static hosting
 - **All processing happens in the browser** — no data leaves your machine
 
 ---
 
 ## Changelog
+
+### v4.0 — March 19, 2025
+- **NEW: Regulator Adjustment Tool** ([adjust.html](https://abecamm.github.io/DANs/adjust.html))
+- Two-bookmarklet system: Prep (Google Sheets) → Fill (Regulator)
+- Auto-determines adjustment tier (Small/Large/Humongous) from amount + debit/credit
+- Auto-fills all 4 Regulator form fields (Amount, Credit/Debit, Type, Reason)
+- React/MUI-compatible form filling using nativeInputValueSetter + click simulation
+- Added "Adjustment Tool" link in DAN Extractor header
 
 ### v3.3 — March 17, 2025
 - Redesigned UI with Claude/Anthropic-inspired light theme (warm cream, terracotta accents)
@@ -203,4 +272,4 @@ Rebuilt Google Apps Script bound to the DAN tracking sheet:
 - [x] Amount Mismatch parsing (submitted vs actual)
 - [x] Google Apps Script email generation (Debit + Credit)
 - [x] Claude-inspired light theme redesign
-- [ ] Regulator adjustment automation (deferred — React form blocking)
+- [x] Regulator adjustment automation (Prep + Fill bookmarklets)

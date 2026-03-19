@@ -112,8 +112,8 @@
   <div class="card">
     <div class="card-title"><i class="fa-solid fa-table" style="color:var(--accent)"></i> Step 1 — Prep Adjustment</div>
     <div class="card-desc">
-      Use this bookmarklet on the <strong>Google Sheet</strong>. Select a row, copy it (Cmd+C), then click the bookmarklet.
-      It reads the row data, determines the correct adjustment tier, and opens Regulator to the unit's page.
+      Use this bookmarklet on the <strong>Google Sheet</strong>. Select a row, copy it (Cmd+C), click the bookmarklet, then <strong>Cmd+V</strong> into the prompt.
+      It parses the row data, determines the correct adjustment tier, and opens Regulator to the unit's page.
     </div>
     <a class="bookmarklet-link" id="prep-bookmarklet" href="#">
       <i class="fa-solid fa-clipboard-list"></i> Prep DAN Adjustment
@@ -124,13 +124,14 @@
     <div class="steps">
       <div class="step">Select the row in the DAN Google Sheet that needs adjustment</div>
       <div class="step">Copy the row — <strong>Cmd+C</strong> (make sure you select the full row A through P)</div>
-      <div class="step">Click the <strong>"Prep DAN Adjustment"</strong> bookmarklet</div>
-      <div class="step">A toast shows the parsed data + tier. Regulator opens to the unit's page in a new tab.</div>
+      <div class="step">Click the <strong>"Prep DAN Adjustment"</strong> bookmarklet — a prompt box appears</div>
+      <div class="step"><strong>Cmd+V</strong> to paste the row into the prompt, then click OK</div>
+      <div class="step">A toast shows the parsed data + tier. Regulator opens to the unit's page in a new tab. The adjustment data is copied to your clipboard as JSON.</div>
     </div>
 
     <div class="info-box">
       <i class="fa-solid fa-circle-info"></i>
-      <span>The bookmarklet reads tab-separated values from your clipboard. Make sure you've copied the full row (columns A–P) before clicking.</span>
+      <span>The bookmarklet shows a prompt box. Copy the row first (Cmd+C), then click the bookmarklet and paste (Cmd+V) into the prompt. It parses the tab-separated values from columns A–P.</span>
     </div>
   </div>
 
@@ -198,7 +199,7 @@
 // ============================================================
 // Minified single-line bookmarklet. Reads clipboard, parses row,
 // determines tier, writes JSON to clipboard, opens Regulator.
-document.getElementById('prep-bookmarklet').href = "javascript:void(function(){try{navigator.clipboard.readText().then(function(t){if(!t||t.indexOf(String.fromCharCode(9))<0){alert('No row data on clipboard. Select the full row (A-P) and Cmd+C first.');return;}var c=t.split(String.fromCharCode(9));if(c.length<14){alert('Expected at least 14 columns (A-N), got '+c.length+'. Copy the full row.');return;}var u=c[4].trim(),a=c[9].trim().replace(/[$,]/g,''),r=c[10].trim(),ty=c[13].trim();if(!u){alert('Unit Token (col E) is empty.');return;}if(!a){alert('Adjusted Amount (col J) is empty.');return;}if(!ty){alert('Adjustment Type (col N) is empty.');return;}var n=parseFloat(a),tier='',ic=ty.toLowerCase()==='credit';if(ic){tier=n<=1000?'Small':n<=5000?'Large':'Humongous';}else{tier=n<=5000?'Small':n<=25000?'Large':'Humongous';}var reason='Deposit Adjustment Notice '+ty+' - '+r;var p=JSON.stringify({unitToken:u,amount:a,creditOrDebit:ty.toUpperCase(),type:'SQUARE_CARD_CLAIMS',reason:reason,tier:tier});navigator.clipboard.writeText(p).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:420px;line-height:1.7;transition:opacity 0.3s;';var tb=tier==='Small'?'background:rgba(46,125,50,0.08);color:#2e7d32;':tier==='Large'?'background:rgba(212,135,14,0.08);color:#d4870e;':'background:rgba(193,53,53,0.06);color:#c13535;';d.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:6px;\">Adjustment Prepped</div><div><b>Unit:</b> '+u+'</div><div><b>Amount:</b> $'+n.toLocaleString(\"en-US\",{minimumFractionDigits:2})+'</div><div><b>Type:</b> '+ty+'</div><div><b>Tier:</b> <span style=\"padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;'+tb+'\">'+tier+'</span></div><div><b>Reason:</b> '+reason+'</div><div style=\"margin-top:8px;font-size:12px;color:#6b6560;\">Opening Regulator...</div>';document.body.appendChild(d);setTimeout(function(){window.open('https://regulator.sqprod.co/n/users/'+u,'_blank');},600);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},6000);});}).catch(function(e){alert('Clipboard error: '+e.message+'\\n\\nTry: select the row, Cmd+C, then click this bookmarklet again.');});}catch(e){alert('Error: '+e.message);}})();";
+document.getElementById('prep-bookmarklet').href = "javascript:void(function(){try{var t=prompt('Paste the copied row here (Cmd+V):');if(!t)return;var TAB=String.fromCharCode(9);if(t.indexOf(TAB)<0){alert('No tab-separated data detected. Make sure you copied the full row (A-P) from the sheet.');return;}var c=t.split(TAB);if(c.length<14){alert('Expected at least 14 columns (A-N), got '+c.length+'. Copy the full row.');return;}var u=c[4].trim(),a=c[9].trim().replace(/[$,]/g,''),r=c[10].trim(),ty=c[13].trim();if(!u){alert('Unit Token (col E) is empty.');return;}if(!a){alert('Adjusted Amount (col J) is empty.');return;}if(!ty){alert('Adjustment Type (col N) is empty.');return;}var n=parseFloat(a),tier='',ic=ty.toLowerCase()==='credit';if(ic){tier=n<=1000?'Small':n<=5000?'Large':'Humongous';}else{tier=n<=5000?'Small':n<=25000?'Large':'Humongous';}var reason='Deposit Adjustment Notice '+ty+' - '+r;var p=JSON.stringify({unitToken:u,amount:a,creditOrDebit:ty.toUpperCase(),type:'SQUARE_CARD_CLAIMS',reason:reason,tier:tier});navigator.clipboard.writeText(p).then(function(){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#faf9f7;color:#1a1612;border:1px solid #d4d0ca;padding:16px 24px;border-radius:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-width:420px;line-height:1.7;transition:opacity 0.3s;';var tb=tier==='Small'?'background:rgba(46,125,50,0.08);color:#2e7d32;':tier==='Large'?'background:rgba(212,135,14,0.08);color:#d4870e;':'background:rgba(193,53,53,0.06);color:#c13535;';d.innerHTML='<div style=\"font-weight:700;color:#c96442;margin-bottom:6px;\">Adjustment Prepped</div><div><b>Unit:</b> '+u+'</div><div><b>Amount:</b> $'+n.toLocaleString(\"en-US\",{minimumFractionDigits:2})+'</div><div><b>Type:</b> '+ty+'</div><div><b>Tier:</b> <span style=\"padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;'+tb+'\">'+tier+'</span></div><div><b>Reason:</b> '+reason+'</div><div style=\"margin-top:8px;font-size:12px;color:#6b6560;\">Opening Regulator...</div>';document.body.appendChild(d);setTimeout(function(){window.open('https://regulator.sqprod.co/n/users/'+u,'_blank');},600);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove();},300);},6000);});}catch(e){alert('Error: '+e.message);}})();";
 
 // ============================================================
 // BOOKMARKLET 2: Fill DAN Adjustment (for Regulator)
